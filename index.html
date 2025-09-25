@@ -33,21 +33,55 @@
   <script>
     async function loadPanoramas() {
       const res = await fetch('panos/index.json');
-      const images = await res.json();
+      const panos = await res.json();
       const grid = document.getElementById('panoGrid');
 
-      images.forEach((filename, i) => {
+      panos.forEach((pano, i) => {
+        // Support old format (string array)
+        let filename, title, caption, initialHeading;
+        if (typeof pano === 'string') {
+          filename = pano;
+          title = filename;
+          caption = '';
+          initialHeading = 0;
+        } else {
+          filename = pano.filename;
+          title = pano.title || filename;
+          caption = pano.caption || '';
+          initialHeading = pano.initialHeading || 0;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.alignItems = 'center';
+
+        const titleElem = document.createElement('h2');
+        titleElem.textContent = title;
+        titleElem.style.margin = '0.5em 0 0.2em 0';
+        wrapper.appendChild(titleElem);
+
         const container = document.createElement('div');
         container.className = 'pano-container';
         container.id = 'pano' + i;
-        grid.appendChild(container);
+        wrapper.appendChild(container);
+
+        const captionElem = document.createElement('div');
+        captionElem.textContent = caption;
+        captionElem.style.margin = '0.2em 0 0.5em 0';
+        captionElem.style.fontSize = '1em';
+        captionElem.style.color = '#555';
+        wrapper.appendChild(captionElem);
+
+        grid.appendChild(wrapper);
 
         pannellum.viewer(container.id, {
           type: "equirectangular",
           panorama: "panos/" + filename,
           autoLoad: true,
           compass: false,
-          showZoomCtrl: true
+          showZoomCtrl: true,
+          yaw: initialHeading
         });
       });
     }
