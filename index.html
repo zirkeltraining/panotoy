@@ -39,6 +39,10 @@
     async function loadPanoramas() {
       const imgParam = getUrlParam('img');
       if (imgParam) {
+  // Inject style to force Pannellum render container to fill viewport
+  const style = document.createElement('style');
+  style.innerHTML = '.pnlm-render-container { height: 100vh !important; min-height: 100vh !important; }';
+  document.head.appendChild(style);
   // Single image mode
   document.body.innerHTML = '';
   // Set html and body to fill viewport
