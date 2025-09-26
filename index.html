@@ -31,13 +31,73 @@
 
   <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
   <script>
+    function getUrlParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+
     async function loadPanoramas() {
+      const imgParam = getUrlParam('img');
+      if (imgParam) {
+        // Single image mode
+        document.body.innerHTML = '';
+        const container = document.createElement('div');
+        container.id = 'singlePano';
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.width = '100vw';
+        container.style.height = '100vh';
+        container.style.zIndex = '10';
+        document.body.appendChild(container);
+
+        // Try to find metadata in index.json
+        let panoMeta = { filename: imgParam, title: imgParam, caption: '', initialHeading: 0 };
+        try {
+          const res = await fetch('panos/index.json');
+          const panos = await res.json();
+          panos.forEach(pano => {
+            if (typeof pano === 'string' && pano === imgParam) {
+              panoMeta = { filename: pano, title: pano, caption: '', initialHeading: 0 };
+            } else if (typeof pano === 'object' && pano.filename === imgParam) {
+              panoMeta = pano;
+            }
+          });
+        } catch (e) {}
+
+        pannellum.viewer('singlePano', {
+          type: "equirectangular",
+          panorama: "panos/" + panoMeta.filename,
+          autoLoad: true,
+          compass: false,
+          showZoomCtrl: true,
+          yaw: panoMeta.initialHeading || 0
+        });
+
+        // Optionally show title/caption overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.bottom = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.color = '#fff';
+        overlay.style.padding = '1em';
+        overlay.style.fontSize = '1.2em';
+        overlay.style.zIndex = '20';
+        overlay.style.pointerEvents = 'none';
+        overlay.innerHTML = `<strong>${panoMeta.title}</strong><br>${panoMeta.caption}`;
+        document.body.appendChild(overlay);
+        return;
+      }
+
+      // Album mode
       const res = await fetch('panos/index.json');
       const panos = await res.json();
       const grid = document.getElementById('panoGrid');
 
       panos.forEach((pano, i) => {
-        // Support old format (string array)
+        // ...existing code...
         let filename, title, caption, initialHeading;
         if (typeof pano === 'string') {
           filename = pano;
